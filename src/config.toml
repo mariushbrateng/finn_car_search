@@ -1,0 +1,25 @@
+[car_codes]
+corolla = "1.813.1389"
+c_hr = "1.813.2000401"
+prius = "1.813.6749"
+prius_plug_in = "1.813.2000426"
+id_4 = "1.817.8392"
+id_4_gtx = "1.817.2000553"
+model_3 = "1.8078.2000501"
+model_s = "1.8078.2000138"
+model_x = "1.8078.2000379"
+model_y = "1.8078.2000555"
+e_niro = "1.777.2000459"
+x_ceed = "1.777.2000526"
+niro = "1.777.2000392"
+i3 = "1.749.2000264"
+duster = "1.8079.2000191"
+sportage  = "1.777.1119"
+inoniq_5 = "1.772.2000546"
+ioniq = "1.772.2000393"
+kona = "1.772.2000438"
+polestar_2 = "1.8102.8370"
+
+[scraper]
+basic_finn_url = "https://www.finn.no/car/used/search.html?sales_form=1&model="
+

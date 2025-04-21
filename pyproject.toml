@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "finn-no-car-search"
+version = "0.1.0"
+description = ""
+authors = ["Marcus Hülsdau <marcus@aiba.ai>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pandas = "^2.2.2"
+ipykernel = "^6.29.4"
+plotly = "^5.22.0"
+beautifulsoup4 = "^4.12.3"
+pyarrow = "^16.1.0"
+pydantic = "^2.7.1"
+seaborn = "^0.13.2"
+streamlit = "^1.35.0"
+scikit-learn = "^1.5.0"
+streamlit-javascript = "^0.1.5"
+dash = "^2.17.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

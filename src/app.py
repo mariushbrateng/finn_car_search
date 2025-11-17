@@ -18,6 +18,13 @@ def load_data(path):
     return pd.read_parquet(path)
 
 
+def _min_max(series, fallback_min: int, fallback_max: int) -> tuple[int, int]:
+    non_na = series.dropna()
+    if non_na.empty:
+        return fallback_min, fallback_max
+    return int(non_na.min()), int(non_na.max())
+
+
 df = load_data(DATA_PATH)
 
 st.title("Interactive Data Explorer")
@@ -27,25 +34,28 @@ st.title("Interactive Data Explorer")
 def sidebar_filters(data):
     st.sidebar.header("Filters")
 
+    year_min, year_max = _min_max(data["model_year"], 2015, 2025)
     model_year_range = st.sidebar.slider(
         "Model Year",
-        int(data["model_year"].min()),
-        int(data["model_year"].max()),
-        (int(data["model_year"].min()), int(data["model_year"].max())),
+        year_min,
+        year_max,
+        (year_min, year_max),
     )
 
+    km_min, km_max = _min_max(data["model_km"], 0, 300_000)
     model_km_range = st.sidebar.slider(
         "Model KM",
-        int(data["model_km"].min()),
-        int(data["model_km"].max()),
-        (int(data["model_km"].min()), int(data["model_km"].max())),
+        km_min,
+        km_max,
+        (km_min, km_max),
     )
 
+    price_min, price_max = _min_max(data["price"], 0, 1_000_000)
     price_range = st.sidebar.slider(
         "Price",
-        int(data["price"].min()),
-        int(data["price"].max()),
-        (int(data["price"].min()), int(data["price"].max())),
+        price_min,
+        price_max,
+        (price_min, price_max),
     )
 
     brand_options = list(data["brand"].unique())

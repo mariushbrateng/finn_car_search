@@ -8,8 +8,9 @@ from pathlib import Path
 # Set up Streamlit layout
 st.set_page_config(layout="wide")
 
-# Constants
-DATA_PATH = Path.cwd() / "data" / "ads.parquet"
+# Paths
+BASE_DIR = Path(__file__).resolve().parents[1]
+DATA_PATH = BASE_DIR / "data" / "ads.parquet"
 
 
 # Load data
@@ -24,6 +25,14 @@ def _min_max(series, fallback_min: int, fallback_max: int) -> tuple[int, int]:
         return fallback_min, fallback_max
     return int(non_na.min()), int(non_na.max())
 
+
+if not DATA_PATH.exists():
+    st.error(
+        "Missing dataset at `data/ads.parquet`. "
+        "Run `crawler.py` + `scraper.py` locally, commit the resulting parquet, "
+        "and redeploy."
+    )
+    st.stop()
 
 df = load_data(DATA_PATH)
 

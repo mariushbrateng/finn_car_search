@@ -1,6 +1,5 @@
 import requests
 from bs4 import BeautifulSoup
-import pandas as pd
 import tomllib
 import re
 from pathlib import Path
@@ -21,10 +20,21 @@ car_codes = config["car_codes"]
 basic_finn_url = config["scraper"]["basic_finn_url"]
 
 
+HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/118.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "en-US,en;q=0.9,nb;q=0.8",
+}
+
+
 def fetch_ad_codes_from_url(url: str, ad_codes: list | None = None, pagination=1):
     print(pagination)
     paginated_url = f"{url}&page={pagination}"
-    response = requests.get(paginated_url)
+    response = requests.get(paginated_url, headers=HEADERS, timeout=30)
+    response.raise_for_status()
 
     soup = BeautifulSoup(response.text, "html.parser")
     new_ad_codes = get_ad_codes_from_soup(soup)
@@ -33,21 +43,30 @@ def fetch_ad_codes_from_url(url: str, ad_codes: list | None = None, pagination=1
         ad_codes = new_ad_codes
     else:
         ad_codes.extend(new_ad_codes)
-    chevron_right_elements = soup.find_all(class_="icon icon--chevron-right")
 
-    if chevron_right_elements:
+    has_next_page = soup.find("a", rel="next") is not None
+
+    if has_next_page:
         return fetch_ad_codes_from_url(url, ad_codes, pagination + 1)
     return ad_codes
+
+
+AD_CODE_PATTERNS = [
+    re.compile(r"finnkode=(\d+)"),
+    re.compile(r"/mobility/item/(\d+)"),
+]
 
 
 def get_ad_codes_from_soup(soup: BeautifulSoup) -> list:
     links = soup.find_all("a", href=True)
     ad_codes = []
     for link in links:
-        if "finnkode" in link["href"]:
-            pattern = r"finnkode=(\d+)"
-            ad_code = int(re.search(pattern, link["href"]).group(1))
-            ad_codes.append(ad_code)
+        href = link["href"]
+        for pattern in AD_CODE_PATTERNS:
+            match = pattern.search(href)
+            if match:
+                ad_codes.append(int(match.group(1)))
+                break
     return ad_codes
 
 

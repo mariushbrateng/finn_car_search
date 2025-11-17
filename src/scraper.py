@@ -14,6 +14,7 @@ ads_folder = data_path / "ads"
 
 
 class Ad(BaseModel):
+    model_config = {"protected_namespaces": ()}
     model_year: int | None
     model_km: int | None
     price: int | None
@@ -69,12 +70,13 @@ def get_price(soup) -> int | None:
         try:
             # Alternative method based on the new approach
             script_tag = soup.find("script", {"id": "horseshoe-config"})
+            if script_tag and script_tag.string:
+                # Parse the JSON content
+                json_content = json.loads(script_tag.string)
 
-            # Parse the JSON content
-            json_content = json.loads(script_tag.string)
-
-            # Extract the value of "pris"
-            return int(json_content["xandr"]["feed"]["pris"])
+                # Extract the value of "pris"
+                return int(json_content["xandr"]["feed"]["pris"])
+            raise ValueError("horseshoe-config script missing")
 
         except Exception as e:
             print("Alternative method failed:", e)

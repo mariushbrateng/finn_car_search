@@ -1,12 +1,13 @@
+import base64
+import json
+from functools import partial
+from pathlib import Path
+from typing import List
+from urllib.parse import unquote
+
 import pandas as pd
 from bs4 import BeautifulSoup
-from functools import partial
 from pydantic import BaseModel
-from pathlib import Path
-import plotly.express as px
-import tomllib
-from typing import List
-import json
 
 
 data_path = Path.cwd() / "data"
@@ -83,6 +84,67 @@ def get_price(soup) -> int | None:
             return None
 
 
+def decode_props_payload(soup: BeautifulSoup) -> dict | None:
+    element = soup.find(attrs={"data-props": True})
+    if not element:
+        return None
+    raw_value = element.get("data-props")
+    if not raw_value:
+        return None
+    try:
+        decoded = base64.b64decode(raw_value)
+        json_str = unquote(decoded.decode("utf-8"))
+        return json.loads(json_str)
+    except Exception as exc:
+        print("Failed to decode data-props payload:", exc)
+        return None
+
+
+SAFETY_LABELS = {
+    "serviceTab": "Service",
+    "membershipTab": "Medlem",
+    "usedCarWarrantyTab": "Bruktbilgaranti",
+    "exchangeRightTab": "Bytterett",
+    "programCarTab": "Programbil",
+    "warrantyTab": "Garanti",
+    "conditionReportTab": "Tilstand",
+}
+
+
+def normalize_safety_elements(raw_elements: list[str] | None) -> list[str] | None:
+    if not raw_elements:
+        return None
+    return [SAFETY_LABELS.get(element, element) for element in raw_elements]
+
+
+def parse_price_from_payload(ad_payload: dict | None) -> int | None:
+    if not ad_payload:
+        return None
+    price = ad_payload.get("price") or {}
+    return price.get("total") or price.get("main")
+
+
+def parse_brand_model(ad_payload: dict | None) -> tuple[str | None, str | None]:
+    if not ad_payload:
+        return None, None
+    model_make = ad_payload.get("model_and_make") or {}
+    brand = (model_make.get("parent") or {}).get("value")
+    model = model_make.get("value")
+    return brand, model
+
+
+def is_leasing_from_payload(ad_payload: dict | None) -> bool | None:
+    if not ad_payload:
+        return None
+    sales_form = (ad_payload.get("sales_form") or {}).get("value", "").lower()
+    if "leasing" in sales_form:
+        return True
+    price_spec = ad_payload.get("price_specification") or []
+    if any(item.get("type") == "MONTHLY_PAYMENT" for item in price_spec):
+        return True
+    return False
+
+
 def get_brand_type_id(soup):
     try:
         anchors = soup.find_all("a", id="carSearchLink")
@@ -124,23 +186,35 @@ def get_leasing(soup):
 
 
 files_list = [file for file in ads_folder.iterdir() if file.is_file()]
-ad_link = "https://www.finn.no/car/used/ad.html?finnkode="
+legacy_link = "https://www.finn.no/car/used/ad.html?finnkode="
+mobility_link = "https://www.finn.no/mobility/item/"
 ad_lst = []
 for file in files_list:
     with open(file) as f:
         soup = BeautifulSoup(f.read(), "html.parser")
+    payload = decode_props_payload(soup)
+    payload_ad = (payload or {}).get("adData", {}).get("ad", {})
+    payload_link = (
+        (payload or {}).get("canonicalUrl")
+        or payload_ad.get("canonical_url")
+        or f"{mobility_link}{file.stem}"
+    )
+    brand_from_payload, model_from_payload = parse_brand_model(payload_ad)
     try:
         ad = Ad(
-            model_year=get_model_year(soup),
-            model_km=get_model_km(soup),
-            price=get_price(soup),
-            tldr=get_tldr(soup),
-            brand=get_brand_type_id(soup)[0],
-            model=get_brand_type_id(soup)[1],
+            model_year=payload_ad.get("year") or get_model_year(soup),
+            model_km=payload_ad.get("mileage") or get_model_km(soup),
+            price=parse_price_from_payload(payload_ad) or get_price(soup),
+            tldr=payload_ad.get("title") or get_tldr(soup),
+            brand=brand_from_payload or get_brand_type_id(soup)[0],
+            model=model_from_payload or get_brand_type_id(soup)[1],
             id=int(file.stem),
-            link=ad_link + str(file.stem),
-            safety_elements=get_safty_elements(soup),
-            is_leasing=get_leasing(soup),
+            link=payload_link if payload else legacy_link + str(file.stem),
+            safety_elements=normalize_safety_elements(
+                (payload or {}).get("safetyElements")
+            )
+            or get_safty_elements(soup),
+            is_leasing=is_leasing_from_payload(payload_ad) or get_leasing(soup),
         )
 
         ad_lst.append(ad)

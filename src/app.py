@@ -26,6 +26,21 @@ def _min_max(series, fallback_min: int, fallback_max: int) -> tuple[int, int]:
     return int(non_na.min()), int(non_na.max())
 
 
+def _range_selector(label: str, min_value: int, max_value: int, step: int = 1):
+    """Render a slider when possible, fall back to a single-value input when range collapses."""
+    if min_value == max_value:
+        value = st.sidebar.number_input(
+            label,
+            min_value=min_value,
+            max_value=max_value,
+            value=min_value,
+            step=step,
+            help="Only one value available in the current dataset.",
+        )
+        return int(value), int(value)
+    return st.sidebar.slider(label, min_value, max_value, (min_value, max_value))
+
+
 if not DATA_PATH.exists():
     st.error(
         "Missing dataset at `data/ads.parquet`. "
@@ -44,28 +59,13 @@ def sidebar_filters(data):
     st.sidebar.header("Filters")
 
     year_min, year_max = _min_max(data["model_year"], 2015, 2025)
-    model_year_range = st.sidebar.slider(
-        "Model Year",
-        year_min,
-        year_max,
-        (year_min, year_max),
-    )
+    model_year_range = _range_selector("Model Year", year_min, year_max)
 
     km_min, km_max = _min_max(data["model_km"], 0, 300_000)
-    model_km_range = st.sidebar.slider(
-        "Model KM",
-        km_min,
-        km_max,
-        (km_min, km_max),
-    )
+    model_km_range = _range_selector("Model KM", km_min, km_max, step=1_000)
 
     price_min, price_max = _min_max(data["price"], 0, 1_000_000)
-    price_range = st.sidebar.slider(
-        "Price",
-        price_min,
-        price_max,
-        (price_min, price_max),
-    )
+    price_range = _range_selector("Price", price_min, price_max, step=10_000)
 
     brand_options = list(data["brand"].unique())
     selected_brands = st.sidebar.multiselect(

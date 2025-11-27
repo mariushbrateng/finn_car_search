@@ -1,8 +1,6 @@
 [car_codes]
-model_3 = "1.8078.2000501"
-model_y = "1.8078.2000555"
 inoniq_5 = "1.772.2000546"
 
 [scraper]
-basic_finn_url = "https://www.finn.no/mobility/search/car?registration_class=1&model="
+basic_finn_url = "https://www.finn.no/mobility/search/car?registration_class=1&wheel_drive=2&model="
 

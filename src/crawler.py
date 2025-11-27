@@ -18,6 +18,7 @@ with open("src/config.toml", "rb") as f:
     config = tomllib.load(f)
 car_codes = config["car_codes"]
 basic_finn_url = config["scraper"]["basic_finn_url"]
+filters = config.get("filters", {})
 
 
 HEADERS = {
@@ -28,6 +29,17 @@ HEADERS = {
     ),
     "Accept-Language": "en-US,en;q=0.9,nb;q=0.8",
 }
+
+
+def build_search_url(car_code: str) -> str:
+    url = f"{basic_finn_url}{car_code}"
+    year_from = filters.get("year_from")
+    if year_from not in (None, ""):
+        url += f"&year_from={year_from}"
+    year_to = filters.get("year_to")
+    if year_to not in (None, ""):
+        url += f"&year_to={year_to}"
+    return url
 
 
 def fetch_ad_codes_from_url(url: str, ad_codes: list | None = None, pagination=1):
@@ -86,7 +98,7 @@ def fetch_and_save_ad_soup(ad_code, output_dir: Path):
 
 
 def scrape_car_model(car_code: str, basic_finn_url: str, output_dir: Path):
-    basic_finn_url += car_code
+    basic_finn_url = build_search_url(car_code)
     ad_codes_old = read_saved_ad_codes(output_dir)
     ad_codes_new = fetch_ad_codes_from_url(basic_finn_url)
     ad_codes_diff = [code for code in ad_codes_new if code not in ad_codes_old]

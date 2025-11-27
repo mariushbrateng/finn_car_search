@@ -4,3 +4,7 @@ inoniq_5 = "1.772.2000546"
 [scraper]
 basic_finn_url = "https://www.finn.no/mobility/search/car?registration_class=1&wheel_drive=2&model="
 
+[filters]
+year_from = 2022
+year_to = 2022
+

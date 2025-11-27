@@ -30,10 +30,10 @@ model_y = "1.8078.2000555"
 ioniq_5 = "1.772.2000546"
 
 [scraper]
-basic_finn_url = "https://www.finn.no/mobility/search/car?registration_class=1&model="
+basic_finn_url = "https://www.finn.no/mobility/search/car?registration_class=1&wheel_drive=2&model="
 ```
 
-Each `car_code` is Finn’s internal model identifier. To add/remove models:
+Each `car_code` is Finn’s internal model identifier. The `wheel_drive=2` parameter limits searches to AWD/4x4 vehicles; tweak or extend the query string to add other filters Finn exposes. To add/remove models:
 
 1. Visit the Finn search UI, open the dev tools → Network tab, and copy the `model=` param from the URL when you filter by a specific model.
 2. Update the `[car_codes]` section accordingly.
